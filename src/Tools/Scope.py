@@ -86,13 +86,5 @@ if __name__ == '__main__':
     ex_osc.run()
     # osc.display_loop()
 
-    # example_data = [np.random.rand(100) for _ in range(3)]
-    # while True:
-    #     for i in range(3):
-    #         example_data[i][:-1] = example_data[i][1:]
-    #         example_data[i][-1] = np.random.rand()
-    #     osc.update_curve(0, 0, example_data[0])
-    #     osc.update_curve(1, 0, example_data[1])
-    #     osc.update_curve(1, 1, example_data[2])
-    #     time.sleep(0.1)
+
 
