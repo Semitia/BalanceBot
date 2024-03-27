@@ -50,7 +50,7 @@ class BalanceBot:
         self.knee = [   [Motor(LEFT_FRONT_CAN_ID), Motor(LEFT_BACK_CAN_ID)],
                         [Motor(RIGHT_FRONT_CAN_ID), Motor(RIGHT_BACK_CAN_ID)] ]
         self.wheel = [Motor(LEFT_WHEEL_CAN_ID), Motor(RIGHT_WHEEL_CAN_ID)]
-        
+        # self.imu = 
         
     # def recv_can_msg(self):
         
