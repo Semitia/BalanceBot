@@ -5,6 +5,9 @@ import threading
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtWidgets
 
+example_data_timer = [np.random.rand(100) for _ in range(3)]
+ang_timer = 0
+
 
 class Oscilloscope:
     def __init__(self, title='实时波形监视'):
@@ -15,8 +18,8 @@ class Oscilloscope:
         self.plots = []          # 画布列表
         self.curve_num = []      # 画布对应的曲线数量
         self.curves = [[], []]   # 画布对应的曲线列表
-        # self.timer = QtCore.QTimer()
-        # self.timer.timeout.connect(self.update_timer)
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_timer)
 
     def add_plot(self, title='数据曲线'):
         plot = self.win.addPlot(title=title)
@@ -32,14 +35,17 @@ class Oscilloscope:
         self.curve_num[plot_index] += 1
         self.curves[plot_index].append(curve)
 
-    # def update_timer(self):
-    #     global example_data
-    #     for i in range(3):
-    #         example_data[i][:-1] = example_data[i][1:]
-    #         example_data[i][-1] = np.random.rand()
-    #     self.update_curve(0, 0, example_data[0])
-    #     self.update_curve(1, 0, example_data[1])
-    #     self.update_curve(1, 1, example_data[2])
+    def update_timer(self):
+        global example_data_timer, ang_timer
+        ang_timer += 0.01
+        for i in range(3):
+            example_data_timer[i][:-1] = example_data_timer[i][1:]
+            example_data_timer[i][-1] = np.sin(ang_timer + i * np.pi / 3)
+        if ang_timer > 2 * np.pi:
+            ang_timer = 0
+        self.update_curve(0, 0, example_data_timer[0])
+        self.update_curve(1, 0, example_data_timer[1])
+        self.update_curve(1, 1, example_data_timer[2])
 
     def update_curve(self, plot_index=0, curve_index=0, data=None):
         if plot_index >= self.plot_num or curve_index >= self.curve_num[plot_index]:
@@ -47,8 +53,8 @@ class Oscilloscope:
             return
         self.curves[plot_index][curve_index].setData(data)
 
-    # def start_timer(self, interval=50):
-    #     self.timer.start(interval)
+    def start_timer(self, interval=50):
+        self.timer.start(interval)
 
     def run(self):
         if sys.flags.interactive != 1 or not hasattr(QtCore, 'PYQT_VERSION'):
@@ -59,7 +65,7 @@ def data_update(osc):
     example_data = [np.random.rand(100) for _ in range(3)]
     ang = 0
     while True:
-        ang += 0.1
+        ang += 0.01
         for i in range(3):
             example_data[i][:-1] = example_data[i][1:]
             example_data[i][-1] = np.sin(ang + i * np.pi / 3)
@@ -79,10 +85,10 @@ if __name__ == '__main__':
     ex_osc.add_plot(title='画布2')
     ex_osc.add_curve(plot_index=1, pen='g')
     ex_osc.add_curve(plot_index=1, pen='b')
-    # osc.start_timer(interval=50)
+    ex_osc.start_timer(interval=50)  # 必须要用pyQT自带的定时器中断函数更新数据才能稳定运行
 
-    data_thread = threading.Thread(target=data_update, args=(ex_osc,))
-    data_thread.start()
+    # data_thread = threading.Thread(target=data_update, args=(ex_osc,))
+    # data_thread.start()
     ex_osc.run()
     # osc.display_loop()
 

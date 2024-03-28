@@ -1,0 +1,2 @@
+from .Scope import Oscilloscope
+

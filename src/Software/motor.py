@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class MotorState:
     def __init__(self):
         self.mode = 0           # 电机模式
@@ -54,14 +57,13 @@ class KneeMotor(GearedMotor):
         :param data:
         :return:
         """
-        self.state.mode = data[0]
-        self.state.pos = (data[1] << 8) | data[2]
-        self.state.vel = (data[3] << 8) | data[4]
-        self.state.cur = (data[5] << 8) | data[6]
-        self.state.vol = (data[7] << 8) | data[8]
-        self.state.temp = data[9]
-
-        self.state.pos_g = self.state.pos / self.state.ratio
+        # byte 0~3 累计转角*1000 /rad
+        self.state.pos_sum = ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3] )/1000
+        # byte 4~5 速度*10 /rad/s
+        self.state.vel = ((data[4] << 8) | data[5]) / 10
+        self.state.pos = self.state.pos_sum % (2 * np.pi)
+        self.state.pos_sum_g = self.state.pos_sum / self.state.ratio
+        self.state.pos_g = self.state.pos_sum_g % (2 * np.pi)
         self.state.vel_g = self.state.vel / self.state.ratio
 
 
@@ -73,10 +75,10 @@ class WheelMotor(Motor):
         super(WheelMotor, self).__init__(motor_id)
 
     def decode(self, data):
-        self.state.mode = data[0]
-        self.state.pos = (data[1] << 8) | data[2]
-        self.state.vel = (data[3] << 8) | data[4]
-        self.state.cur = (data[5] << 8) | data[6]
-        self.state.vol = (data[7] << 8) | data[8]
-        self.state.temp = data[9]
+        # byte 0~3 累计转角*1000 /rad
+        self.state.pos_sum = ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]) / 1000
+        # byte 4~5 速度*10 /rad/s
+        self.state.vel = ((data[4] << 8) | data[5]) / 10
+        self.state.pos = self.state.pos_sum % (2 * np.pi)
+
 
