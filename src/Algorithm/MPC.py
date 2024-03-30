@@ -145,97 +145,119 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.show()
 
-# class NonlinearMPCController:
-#     def __init__(self, dynamics_func, cost_func, u_bounds, x_bounds, N):
-#         self.dynamics_func = dynamics_func  # Nonlinear dynamics function f(x, u)
-#         self.cost_func = cost_func          # Cost function J(x, u)
-#         self.u_bounds = u_bounds            # Control input bounds (u_min, u_max)
-#         self.x_bounds = x_bounds            # State bounds (x_min, x_max)
-#         self.N = N                          # Prediction horizon
-#
-#     def predict_control(self, x0):
-#         # Define optimization variables for control inputs over the horizon
-#         U = np.zeros((self.N, len(x0)))  # N control actions of the same size as state
-#
-#         # Define cost and constraints for optimization
-#         def objective(U_flat):
-#             U = U_flat.reshape((self.N, len(x0)))
-#             cost = 0
-#             x = x0
-#             for u in U:
-#                 cost += self.cost_func(x, u)
-#                 x = self.dynamics_func(x, u)
-#             return cost
-#
-#         def constraint(U_flat):
-#             U = U_flat.reshape((self.N, len(x0)))
-#             x = x0
-#             for u in U:
-#                 x = self.dynamics_func(x, u)
-#             # Final state should be within bounds
-#             return np.concatenate((x - self.x_bounds[0], self.x_bounds[1] - x))
-#
-#         # Bounds for each control input over the horizon
-#         bounds = [self.u_bounds for _ in range(self.N * len(x0))]
-#
-#         # Flatten U for the optimizer
-#         U_flat = U.flatten()
-#
-#         # Nonlinear constraint
-#         nonlinear_constraint = {'type': 'ineq', 'fun': constraint}
-#
-#         # Solve the optimization problem
-#         result = minimize(objective, U_flat, bounds=bounds, constraints=[nonlinear_constraint])
-#
-#         if result.success:
-#             U_optimal = result.x.reshape((self.N, len(x0)))
-#             return U_optimal[0]  # Return the first control action
-#         else:
-#             raise ValueError("Optimization failed")
-#
-#
-# # Define your system's nonlinear dynamics
-# def dynamics(x, u):
-#     """
-#     状态转移函数
-#     :param x:
-#     :param u:
-#     :return:
-#     """
-#     # Insert your system's dynamics here
-#     # For example, a simple nonlinear system could be:
-#     return x + u - 0.1 * x ** 2
-#
-#
-# def cost(x, u):
-#     """
-#     cost function
-#     :param x:
-#     :param u:
-#     :return:
-#     """
-#     Q = np.diag([1, 1])
-#     R = np.diag([1, 1])
-#     return x.T @ Q @ x + u.T @ R @ u
-#
-#
-# # Define control input bounds and state bounds
-# u_bounds = (-1, 1)
-# x_bounds = (-10, 10)
-# # Prediction horizon
-# N = 10
-# if __name__ == 'main':
+class NonlinearMPCController:
+    def __init__(self, dynamics_func, cost_func, horizon, n, p, x_bounds, u_bounds):
+        self.dynamics_func = dynamics_func  # Nonlinear dynamics function f(x, u)
+        self.cost_func = cost_func          # Cost function J(x, u)
+        self.N = horizon                    # Prediction horizon
+        self.n = n                          # Number of states
+        self.p = p                          # Number of control outputs
+        self.x_bounds = x_bounds            # State bounds nx2: lower bound in 1st column, upper bound in 2nd column
+        self.u_bounds = u_bounds            # Control bounds px2
+
+    def predict_control(self, x_init):
+        """
+        Predict the optimal control output at time k
+        :param x_init: Initial state at time k
+        :return:
+        """
+
+        def objective(u_list_flat):
+            """
+            计算预测空间里代价和
+            :param u_list_flat: 一维化的控制输入序列
+            :return: cost_sum: 代价和
+            """
+            u_list = u_list_flat.reshape((self.N, self.p))    # Reshape U from 1xNp to be NxP
+            cost_sum = 0
+            x = x_init
+            for u in u_list:        # 按行遍历，需要转置
+                u = u.reshape((self.p, 1))
+                cost_sum += self.cost_func(x, u)
+                x = self.dynamics_func(x, u)
+            return cost_sum
+
+        def constraint(u_list_flat):
+            u_list = u_list_flat.reshape((self.N, self.p))
+            x = x_init
+            for u in u_list:
+                u = u.reshape((self.p, 1))
+                x = self.dynamics_func(x, u)
+            # 只对最终状态进行了约束, 越界的将返回负数
+            lower_bounds = np.array([b[0] for b in self.x_bounds]).reshape(-1, 1)
+            upper_bounds = np.array([b[1] for b in self.x_bounds]).reshape(-1, 1)
+            return np.concatenate(((x - lower_bounds).flatten(), (upper_bounds - x).flatten()))
+
+        u_list_flat0 = np.zeros(self.p * self.N)  # Initial guess for control actions
+        # Nonlinear constraint
+        nonlinear_constraint = {'type': 'ineq',
+                                'fun': constraint}
+        # Solve the optimization problem
+        flat_u_bounds = [(bound[0], bound[1]) for bound in self.u_bounds for _ in range(self.N)]
+        result = minimize(objective, u_list_flat0, bounds=flat_u_bounds, constraints=[nonlinear_constraint])
+
+        if result.success:
+            u_list_opti = result.x.reshape((self.N, self.p))
+            return u_list_opti[0].reshape((self.p, 1))              # Return the first control action
+        else:
+            raise ValueError("Optimization failed")
+
+
+# Define your system's nonlinear dynamics
+def dynamics(x_vec, u_vec):
+    """
+    状态转移函数
+    :param x_vec:  当前状态向量
+    :param u_vec:  控制输入
+    :return: next_x_vec 下一个状态
+    """
+    next_x_vec = np.zeros_like(x_vec)
+    # next_x_vec[0] = x_vec[0] + x_vec[1]
+    # next_x_vec[1] = x_vec[1] + u_vec[0] - 0.1 * x_vec[1] ** 2
+
+    a_mat = np.array([[1, 0.1],
+                     [-1, 2]])
+    b_mat = np.array([[0.2, 1],
+                     [0.5, 2]])
+    next_x_vec = a_mat @ x_vec + b_mat @ u_vec
+    return next_x_vec
+
+
+def cost(x_vec, u_vec):
+    """
+    cost function
+    :param x_vec: 当前状态
+    :param u_vec: 控制输入
+    :return: cost
+    """
+    q_mat = np.diag([1, 1])     # State cost matrix
+    r_mat = np.diag([1, 1])     # Control cost matrix
+    # print('x_vec', x_vec, '\r\n', 'u_vec', u_vec, '\r\n')
+    return x_vec.T @ q_mat @ x_vec + u_vec.T @ r_mat @ u_vec
+
+
+# Prediction horizon
+
+# if __name__ == '__main__':
 #     # Create an instance of the controller
-#     nmpc = NonlinearMPCController(dynamics, cost, u_bounds, x_bounds, N)
+#     ex_x_bounds = [(-100, 100), (-100, 100)]  # State bounds
+#     ex_u_bounds = [(-10, 10), (-10, 10)]  # Control bounds
+#     non_mpc = NonlinearMPCController(dynamics, cost, 8, 2, 2, ex_x_bounds, ex_u_bounds)
 #     # Simulate the system
-#     x0 = np.array([[2], [2]])
+#     x0 = np.array([[2],
+#                    [2]])
 #     x_history = [x0]
 #     u_history = []
-#     for _ in range(20):
-#         u = nmpc.predict_control(x_history[-1])
-#         x_next = dynamics(x_history[-1], u)
+#     time_steps = 50
+#     time_used = 0
+#     for _ in range(time_steps):
+#         start_time = time.time()
+#         ut = non_mpc.predict_control(x_history[-1])
+#         x_next = dynamics(x_history[-1], ut)
 #         x_history.append(x_next)
-#         u_history.append(u)
+#         u_history.append(ut)
+#         time_used += time.time() - start_time
+#     print(f"Average time taken per iteration: {time_used / time_steps:.6f}s")
 #
 #     # Convert history to numpy arrays for plotting
 #     x_history = np.array(x_history)
