@@ -1,0 +1,46 @@
+# balance robot configuration
+# 机器人基本配置
+robot:
+  # 机器人模型和版本
+  model: "XR-200"
+  version: "1.5"
+  # 机器人名称
+  name: "HelperBot"
+  # 机器人序列号
+  serial_number: "HB202309150045"
+
+# 硬件配置
+hardware:
+  # 电池配置
+  battery:
+    type: "Li-ion"
+    capacity: "1150mAh"
+    voltage: "11.7V"
+  # 传感器列表
+  sensors:
+    - type: "camera"
+      location: "front"
+      resolution: "1080p"
+    - type: "lidar"
+      range: "100m"
+    - type: "temperature"
+      range: "-10°C to 50°C"
+  # 运动单元配置
+  mobility:
+    wheels: 4
+    wheel_type: "all-terrain"
+    motors:
+      count: 4
+      type: "brushless"
+
+# 通信配置
+communications:
+  # 主通信方式
+  primary: "WiFi"
+  # 备用通信方式
+  secondary: "Bluetooth"
+  # 通信协议
+  protocols:
+    - "TCP/IP"
+    - "UDP"
+    - "HTTP/HTTPS"

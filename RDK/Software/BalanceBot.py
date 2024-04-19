@@ -1,9 +1,7 @@
 from Periph.USB2CAN import USB2CAN
 
 USB2CAN_1_PORT = '/dev/ttyUSB0'
-USB2CAN_1_BAUD = 1000000
-USB2CAN_2_PORT = '/dev/ttyUSB1'
-USB2CAN_2_BAUD = 1000000
+USB2CAN_1_BAUD = 2000000
 
 
 class BalanceBot:
@@ -11,10 +9,9 @@ class BalanceBot:
         # 
 
         # 硬件外设
-        self.can = [USB2CAN(USB2CAN_1_PORT, USB2CAN_1_BAUD),
-                    USB2CAN(USB2CAN_2_PORT, USB2CAN_2_BAUD)]
+        self.can = USB2CAN(USB2CAN_1_PORT, USB2CAN_1_BAUD)
 
-        # self.imu =
+        # state machine of robot
         
     # def recv_can_msg(self):
 

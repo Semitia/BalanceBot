@@ -8,7 +8,7 @@
 #include "MagneticSensor.h" 
 
 /******************************************************************************/
-float shaft_angle;//!< current motor angle
+float shaft_angle;				//!< current motor angle
 float electrical_angle;
 float shaft_velocity;
 float current_sp;
@@ -21,7 +21,7 @@ TorqueControlType torque_controller;
 MotionControlType controller;
 
 float sensor_offset=0;
-float zero_electric_angle;
+float zero_electric_angle = 2.35f;
 /******************************************************************************/
 // shaft angle calculation
 float shaftAngle(void)

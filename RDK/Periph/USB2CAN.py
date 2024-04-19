@@ -133,6 +133,8 @@ class USB2CAN:
 # 功能测试
 def signal_handler(signal, frame):
     sys.exit(0)
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler) # ctrl+c 退出
     print("List of enabled UART:")
