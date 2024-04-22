@@ -16,7 +16,7 @@ class GearedMotorState(MotorState):
     """
     减速电机状态
     """
-    def __init__(self, ratio=5):
+    def __init__(self, ratio=10):
         super(GearedMotorState, self).__init__()
         self.ratio = ratio      # 减速比
         self.pos_sum_g = 0      # 减速后输出轴位置累计值
@@ -40,6 +40,7 @@ class GearedMotor:
     """
     def __init__(self, motor_id, ratio=5):
         self.id = motor_id
+        self.polar = 1                      # 电机极性，调整输出方向
         self.state = GearedMotorState(ratio)
         self.tar_state = GearedMotorState(ratio)
 
@@ -48,8 +49,9 @@ class KneeMotor(GearedMotor):
     """
     使用FOC控制板通信协议的关节电机类
     """
-    def __init__(self, motor_id, ratio=5):
+    def __init__(self, motor_id, ratio=10):
         super(KneeMotor, self).__init__(motor_id, ratio)
+        self.state.pos_g_init = 0
 
     def decode(self, data):
         """
@@ -61,6 +63,7 @@ class KneeMotor(GearedMotor):
         self.state.pos_sum = ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3] )/1000
         # byte 4~5 速度*10 /rad/s
         self.state.vel = ((data[4] << 8) | data[5]) / 10
+
         self.state.pos = self.state.pos_sum % (2 * np.pi)
         self.state.pos_sum_g = self.state.pos_sum / self.state.ratio
         self.state.pos_g = self.state.pos_sum_g % (2 * np.pi)

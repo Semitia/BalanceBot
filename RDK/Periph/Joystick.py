@@ -38,4 +38,3 @@ if __name__ == '__main__':
         print(f"Axes: {ex_axes}")
         print(f"Buttons: {ex_buttons}")
         # 这里可以加上一段延时来限制读取的频率，例如 pygame.time.wait(100)
-

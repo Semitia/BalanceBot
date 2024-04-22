@@ -125,7 +125,7 @@ int alignSensor(void)
 	HAL_Delay(700);
 	al_mec_angle = getAngle();
 	al_elec_angle = _electricalAngle(al_mec_angle, pole_pairs);
-	zero_electric_angle = 2.39;//_normalizeAngle(al_elec_angle);
+	zero_electric_angle = 1.5;//_normalizeAngle(al_elec_angle);
 	HAL_Delay(20);
 	printf("MOT: Zero elec. angle:");
 	printf("%.4f\r\n", zero_electric_angle);
