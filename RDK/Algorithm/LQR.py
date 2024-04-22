@@ -2,6 +2,7 @@ import numpy as np
 from scipy.linalg import solve_continuous_are
 import time
 
+
 class LQRController:
     def __init__(self, A, B, Q, R):
         """
